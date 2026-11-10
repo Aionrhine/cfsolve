@@ -1,0 +1,25 @@
+name: build
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y cmake clang libclang-dev
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --locked --bins --examples
+      - run: |
+          mkdir -p out/profiles
+          cp target/release/challenge target/release/capture-proxy out/
+          cp -r profiles/. out/profiles/
+          tar czf cfsolve-linux-x86_64.tar.gz -C out .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cfsolve-linux-x86_64
+          path: cfsolve-linux-x86_64.tar.gz
